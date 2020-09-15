@@ -9,6 +9,7 @@ import numpy as np
 #from tensorflow import keras
 #from tensorflow.keras import layers
 import math
+from melee import enums
 
 lastdashright = True
 # In[ ]:
@@ -26,6 +27,43 @@ def model():
 
 
 # every possible move the AI can make
+def wavedash(x,y):
+    global gamestate
+    controller.press_button(melee.Button.BUTTON_X)
+    gamestate = console.step()
+    controller.release_all()
+    for x in range(JumpSquatframes[gamestate.player[2].character.name]-1):
+                gamestate = console.step()
+    controller.tilt_analog(melee.Button.BUTTON_MAIN,.7,.2)
+    controller.press_button(melee.Button.BUTTON_R)
+    gamestate=console.step()
+    controller.release_all()
+def airDodge(x,y):
+    global gamestate
+    controller.tilt_analog(melee.Button.BUTTON_MAIN,x,y)
+    controller.press_button(melee.Button.BUTTON_R)
+    gamestate=console.step()
+    controller.release_all()
+
+def sidebR():
+    controller.tilt_analog(melee.Button.BUTTON_MAIN,1,.5)
+    controller.press_button(melee.Button.BUTTON_B)
+    for x in range(100):
+        gamestate=console.step()
+        print(gamestate.player[2].action,gamestate.player[2].action_frame)
+        if gamestate.player[2].action.name not in ["SWORD_DANCE_2_MID","SWORD_DANCE_1","SWORD_DANCE_2_HIGH"]:
+            break
+    controller.release_all()
+def sidebL():
+    controller.tilt_analog(melee.Button.BUTTON_MAIN,0,.5)
+    controller.press_button(melee.Button.BUTTON_B)
+    for x in range(100):
+        gamestate=console.step()
+        print(gamestate.player[2].action,gamestate.player[2].action_frame)
+        if gamestate.player[2].action.name not in ["SWORD_DANCE_2_MID","SWORD_DANCE_1","SWORD_DANCE_2_HIGH"]:
+            break
+    controller.release_all()
+
 def right():
     controller.tilt_analog(melee.Button.BUTTON_MAIN,1,.5)
     console.step()
@@ -34,21 +72,41 @@ def left():
     controller.tilt_analog(melee.Button.BUTTON_MAIN,0,.5)
     console.step()
     controller.release_all()
-def jump():
+def jump(Analog):
     controller.press_button(melee.Button.BUTTON_X)
-    console.step()
-    console.step()
-    console.step()
+
+    gamestate = console.step()
+
+    #print("jumping")
+    for x in range(JumpSquatframes[gamestate.player[2].character.name]-3):
+                gamestate = console.step()
+    controller.tilt_analog(melee.Button.BUTTON_MAIN,Analog,.5)
+    gamestate = console.step()
+    controller.tilt_analog(melee.Button.BUTTON_MAIN,Analog,.5)
+    gamestate = console.step()
     controller.release_all()
 def jab():
     controller.press_button(melee.Button.BUTTON_A)
-def shorthop():
-    if gamestate.player[2].jumps_left == 2 and gamestate.player[2].action != melee.Action.KNEE_BEND:
-                controller.press_button(melee.Button.BUTTON_X)
-                console.step()
-                controller.release_all()
-                console.step()
-                console.step()
+def shorthop(Analog):
+    global gamestate
+    controller.press_button(melee.Button.BUTTON_X)
+
+    gamestate = console.step()
+
+    controller.release_all()
+    #print("jumping")
+    for x in range(JumpSquatframes[gamestate.player[2].character.name]-3):
+                gamestate = console.step()
+    controller.tilt_analog(melee.Button.BUTTON_MAIN,Analog,.5)
+    gamestate = console.step()
+    controller.tilt_analog(melee.Button.BUTTON_MAIN,Analog,.5)
+    gamestate = console.step()
+    controller.release_all()
+    #controller.press_button(melee.Button.BUTTON_A)
+    #gamestate = console.step()
+    #print(gamestate.player[2].action,gamestate.player[2].action_frame)
+    #controller.release_all()
+            
 def crouch():
     controller.tilt_analog(melee.Button.BUTTON_MAIN,.5,.5)
     console.step()
@@ -57,27 +115,18 @@ def fastfall():
         controller.tilt_analog(melee.Button.BUTTON_MAIN,.5,0)
         console.step()
         controller.release_all()
-def pivot():
+def pivotR():
     global gamestate
-    global lastdashright
-    
-    if lastdashright:
-        controller.tilt_analog(melee.Button.BUTTON_MAIN,0,.5)
-        console.step()
-        controller.tilt_analog(melee.Button.BUTTON_MAIN,.5,.5)
-        gamestate=console.step()
-        print("turn left")
-        if gamestate.player[2].facing:
-            print("failed pivot")
-    else:
-        controller.tilt_analog(melee.Button.BUTTON_MAIN,1,.5)
-        gamestate=console.step()
-        controller.tilt_analog(melee.Button.BUTTON_MAIN,.5,.5)
-        gamestate=console.step()
-        print("turn right")
-        if gamestate.player[2].facing ==False:
-            print("failed pivot")
-    print(controller.current.main_stick[0])
+    controller.tilt_analog(melee.Button.BUTTON_MAIN,1,.5)
+    gamestate=console.step()
+    controller.tilt_analog(melee.Button.BUTTON_MAIN,.5,.5)
+    #gamestate=console.step()
+def pivotL():
+    global gamestate
+    controller.tilt_analog(melee.Button.BUTTON_MAIN,0,.5)
+    console.step()
+    controller.tilt_analog(melee.Button.BUTTON_MAIN,.5,.5)
+    #gamestate=console.step()
 def dash(Right,Percent):
     global gamestate
     global lastdashright
@@ -86,27 +135,27 @@ def dash(Right,Percent):
         controller.tilt_analog(melee.Button.BUTTON_MAIN,1,.5)
     else:
         controller.tilt_analog(melee.Button.BUTTON_MAIN,0,.5)
-    for x in range(math.floor(Percent*dashframes[str(gamestate.player[2].character)])):
+    for x in range(math.floor(Percent*dashframes[gamestate.player[2].character.name])):
         gamestate = console.step()
     #controller.release_all()
 def tilt(up,foward):
     if up:
-        controller.tilt_analog(melee.Button.BUTTON_MAIN,.5,.75)
+        controller.tilt_analog(melee.Button.BUTTON_MAIN,.5,.7)
         controller.press_button(melee.Button.BUTTON_A)
-        for x in range(melee.framedata.frame_count(Melee.enums.Action.UPTILT)):
+        for x in range(framedata.frame_count(gamestate.player[2].character,enums.Action.DOWNTILT)):
             console.step()
     if foward:
         if gamestate.player[2].facing:
-            controller.tilt_analog(melee.Button.BUTTON_MAIN,.75,.5)
+            controller.tilt_analog(melee.Button.BUTTON_MAIN,.7,.5)
         else:
-            controller.tilt_analog(melee.Button.BUTTON_MAIN,.25,.5)
+            controller.tilt_analog(melee.Button.BUTTON_MAIN,.3,.5)
         controller.press_button(melee.Button.BUTTON_A)
-        for x in range(10):#(melee.framedata.frame_count(melee.enums.Action.FTILT_MID)):
+        for x in range(framedata.frame_count(gamestate.player[2].character,enums.Action.FTILT_MID)):#(melee.framedata.frame_count(melee.enums.Action.FTILT_MID)):
             console.step()
     else:
-        controller.tilt_analog(melee.Button.BUTTON_MAIN,.5,.25)
+        controller.tilt_analog(melee.Button.BUTTON_MAIN,.5,.3)
         controller.press_button(melee.Button.BUTTON_A)
-        for x in range(10):#Melee.framedata.frame_count(Melee.enums.Action.DOWNTILT)):
+        for x in range(framedata.frame_count(gamestate.player[2].character,enums.Action.DOWNTILT)):
             console.step()
     controller.release_all()
 
@@ -114,13 +163,11 @@ def tilt(up,foward):
 # In[2]:
 
 
-dashframes =  {"Mewtwo":18,"Character.CPTFALCON":15,"Marth":15,"Roy":15,"Donkey Kong":15, "Ganondorf":15,"Peach":15,"Zelda":15,"Pikachu":13,"Pichu":13,"Young Link":13,"Yoshi":13,"Bowser":13,"Ice Climbers":13,"Ness":13,"Jigglypuff": 13,"Kirby":12,"Link":12,"Fox":11,"Falco":11,"Mario":10,"Dr.Mario":10,"Luigi":10,"Mr.Game & Watch":8,"Samus":8,"Sheik":7}
-
+dashframes =  {"Mewtwo":18,"CPTFALCON":15,"Marth":15,"Roy":15,"Donkey Kong":15, "Ganondorf":15,"Peach":15,"Zelda":15,"Pikachu":13,"Pichu":13,"Young Link":13,"Yoshi":13,"Bowser":13,"Ice Climbers":13,"Ness":13,"Jigglypuff": 13,"Kirby":12,"Link":12,"Fox":11,"Falco":11,"Mario":10,"Dr.Mario":10,"Luigi":10,"Mr.Game & Watch":8,"Samus":8,"Sheik":7}
+JumpSquatframes =  {"Mewtwo":18,"CPTFALCON":4,"Marth":15,"Roy":15,"Donkey Kong":15, "Ganondorf":15,"Peach":15,"Zelda":15,"Pikachu":13,"Pichu":13,"Young Link":13,"Yoshi":13,"Bowser":13,"Ice Climbers":13,"Ness":13,"Jigglypuff": 13,"Kirby":12,"Link":12,"Fox":11,"Falco":11,"Mario":10,"Dr.Mario":10,"Luigi":10,"Mr.Game & Watch":8,"Samus":8,"Sheik":7}
 
 # In[3]:
 
-
-dashframes["Fox"]
 
 
 # In[18]:
@@ -390,10 +437,12 @@ while True:
             #    dash(False,x/15)
             #Pivot Deminstration
             #loop+=1
-
-            if loop == 100:
-                x=15
-                print(x)
+            
+            #print(framedata.frame_count(gamestate.player[2].character,enums.Action.FTILT_MID))
+            if loop == 80:
+                x=3
+                #wavedash()
+                #print(x)
                 dash(False,x/15)
                 #controller.tilt_analog(melee.Button.BUTTON_MAIN,0,.5)
                 #for b in range(x-1):
@@ -404,12 +453,17 @@ while True:
                 #dash(False,x/15)
                 #print("after Dash stick")
                 #print(controller.current.main_stick)
-                pivot()
-                tilt(False,True)
+                #pivotR()
+                #sidebR()
+                #shorthop(0)
+                shorthop(.5)
+                airDodge(.3,.3)
+                #tilt(False,True)
                 #print("after pivot stick")
                 #print(controller.current.main_stick)
-            elif loop == 200:
-                print(x)
+            elif loop == 160:
+                #wavedash()
+                #print(x)
                 dash(True,x/15)
                 #controller.tilt_analog(melee.Button.BUTTON_MAIN,1,.5)
                 #for b in range(x-1):
@@ -419,9 +473,13 @@ while True:
                 #controller.tilt_analog(melee.Button.BUTTON_MAIN,.5,.5)
                 #print("after Dash stick")
                 #print(controller.current.main_stick)
-                pivot()
+                #pivotL()
+                #sidebL()
+                shorthop(.5)
+                airDodge(.7,.3)
                 #tilt(up,foward)
-                tilt(False,True)
+                #shorthop(1)
+                #tilt(False,True)
                 #MoonWalk()
                 if x >= 15:
                     x=6
@@ -436,11 +494,11 @@ while True:
         melee.MenuHelper.menu_helper_simple(gamestate,
                                             controller,
                                             args.port,
-                                            melee.Character.GAMEANDWATCH,
+                                            melee.Character.CPTFALCON,
                                             melee.Stage.FINAL_DESTINATION,
                                             args.connect_code,
-                                            autostart=False,
-                                            swag=False)
+                                            autostart=True,
+                                            swag=True)
     if log:
         log.logframe(gamestate)
         log.writeframe()
